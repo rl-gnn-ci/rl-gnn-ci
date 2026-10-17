@@ -148,13 +148,3 @@ def classify(op: str) -> str:
     if op in INVALID_OPERATIONS:
         return "invalid"
     return "unknown"
-
-
-#: Opcode vocabulary of the opcode embedding: admissible operations,
-#: inadmissible operations, and one index for anything else.
-OPCODES = tuple(sorted(VALID_OPERATIONS)) + tuple(sorted(INVALID_OPERATIONS)) + ("<unknown>",)
-_OP_INDEX = {op: i for i, op in enumerate(OPCODES)}
-
-
-def op_index(op: str) -> int:
-    return _OP_INDEX.get(op, len(OPCODES) - 1)

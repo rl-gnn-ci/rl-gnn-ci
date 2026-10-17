@@ -3,15 +3,14 @@ import pytest
 import torch
 
 from ci_ident.env import CIEnv
-from ci_ident.model import GraphStore, TacoNetwork
-from ci_ident.variants import NAMES, load_variant
+from ci_ident.model import GraphStore, ModelConfig, PolicyNetwork
 
 
-def _obs_batch(manifest, picks, variant_env, steps=6, seed=0):
+def _obs_batch(manifest, picks, steps=5, seed=0):
     rng = np.random.default_rng(seed)
     rows = []
     for gi in picks:
-        env = CIEnv({**variant_env, "corpus": manifest, "graphs": [gi], "mode": "inference"})
+        env = CIEnv({"corpus": manifest, "graphs": [gi]})
         o, _ = env.reset()
         for _ in range(int(rng.integers(0, steps))):
             legal = np.flatnonzero(o["action_mask"][:-1])
@@ -25,55 +24,78 @@ def _obs_batch(manifest, picks, variant_env, steps=6, seed=0):
     return {k: torch.as_tensor(np.stack([r[k] for r in rows])) for k in rows[0]}
 
 
-@pytest.mark.parametrize("name", NAMES)
-def test_variant_networks(name, synth_corpus):
-    env_cfg, mcfg = load_variant(name)
+@pytest.fixture(scope="module")
+def net(synth_corpus):
     torch.manual_seed(0)
-    net = TacoNetwork(mcfg, GraphStore(synth_corpus)).eval()
-    obs = _obs_batch(synth_corpus, list(range(0, 36, 4)), env_cfg)
-    B = obs["node_status_vector"].shape[0]
-    with torch.no_grad():
-        s, v = net(obs)
-        one, _ = net({k: x[:1] for k, x in obs.items()})
+    return PolicyNetwork(ModelConfig(), GraphStore(synth_corpus)).eval()
+
+
+def test_shapes_and_mask(net, synth_corpus):
+    obs = _obs_batch(synth_corpus, list(range(0, 30, 3)))
+    logits, value = net(obs)
+    assert logits.shape == (10, 2001) and value.shape == (10,)
     am = obs["action_mask"].bool()
-    assert s.shape == (B, 2001) and v.shape == (B,)
-    assert (s[~am] <= -1e8).all() and (s[am] > -1e8).all()
-    assert am[torch.arange(B), s.argmax(1)].all()
-    assert torch.allclose(s[:1][am[:1]], one[am[:1]], atol=1e-4), "batch-independent"
-    if mcfg.algo == "dqn":
-        # dueling: the advantages average to zero over the feasible actions
-        adv = s - v.unsqueeze(1)
-        mean = (adv * am).sum(1) / am.sum(1)
-        assert torch.allclose(mean, torch.zeros_like(mean), atol=1e-4)
-    if not mcfg.noisy:
-        net.train()
-        with torch.no_grad():
-            s_tr, _ = net(obs)
-        assert torch.allclose(s_tr, s, atol=1e-5), "no train/eval dependence"
+    assert (logits[~am] <= -1e8).all() and (logits[am] > -1e8).all()
+    a = logits.argmax(1)
+    assert am[torch.arange(10), a].all()
 
 
-def test_noisy_layers_are_stochastic_only_in_training(synth_corpus):
-    env_cfg, mcfg = load_variant("dqn-absgain")
-    net = TacoNetwork(mcfg, GraphStore(synth_corpus))
-    obs = _obs_batch(synth_corpus, [3, 9], env_cfg)
-    with torch.no_grad():
-        net.train()
-        a, _ = net(obs)
-        b, _ = net(obs)
+def test_policy_is_a_function_of_the_state(net, synth_corpus):
+    """No batch statistics: a row's output does not depend on the other rows
+    or on train/eval mode."""
+    obs = _obs_batch(synth_corpus, list(range(0, 30, 3)))
+    full, _ = net(obs)
+    one, _ = net({k: v[:1] for k, v in obs.items()})
+    am = obs["action_mask"][:1].bool()
+    assert torch.allclose(full[:1][am], one[am], atol=1e-5)
+    net.train()
+    try:
+        tr, _ = net(obs)
+    finally:
         net.eval()
-        c, _ = net(obs)
-        d, _ = net(obs)
-    assert not torch.equal(a, b) and torch.equal(c, d)
+    assert torch.equal(tr, full)
 
 
-def test_greedy_roundtrip(tmp_path, bench_manifest):
-    from ci_ident.rl.infer import evaluate, save_model
+def test_chunking_is_exact(synth_corpus):
+    torch.manual_seed(1)
+    a = PolicyNetwork(ModelConfig(), GraphStore(synth_corpus)).eval()
+    b = PolicyNetwork(ModelConfig(), GraphStore(synth_corpus), max_nodes_per_chunk=50).eval()
+    b.load_state_dict(a.state_dict())
+    obs = _obs_batch(synth_corpus, list(range(0, 36, 2)))
+    la, va = a(obs)
+    lb, vb = b(obs)
+    assert torch.allclose(la, lb, atol=1e-5) and torch.allclose(va, vb, atol=1e-5)
 
-    env_cfg, mcfg = load_variant("dqn-noshape")
-    torch.manual_seed(0)
-    net = TacoNetwork(mcfg)
-    p = save_model(tmp_path / "m.pt", net, env_cfg, variant="dqn-noshape")
-    rows = evaluate(p, bench_manifest, [(4, (4, 2), 0.4), (7, (2, 1), 1.0)])
-    for r in rows:
-        assert r["speedup"] >= 1.0 and r["area_used"] <= r["area_budget"] + 1e-9
-        assert r["variant"] == "dqn-noshape"
+
+def test_identity_check(net, synth_corpus):
+    obs = _obs_batch(synth_corpus, [4, 9])
+    obs["num_nodes"] = obs["num_nodes"] + 1
+    with pytest.raises(RuntimeError, match="nodes in the store"):
+        net(obs)
+
+
+def test_dummy_batch(net):
+    """RLlib initialises the loss with an all-zero observation batch."""
+    z = {"node_status_vector": torch.zeros(2, 2000), "node_dynamic_feats": torch.zeros(2, 2000, 3),
+         "graph_feats": torch.zeros(2, 16), "action_mask": torch.zeros(2, 2001),
+         "graph_idx": torch.zeros(2, 1), "num_nodes": torch.zeros(2, 1)}
+    logits, _ = net(z)
+    assert (logits.argmax(1) == 2000).all()
+
+
+def test_export_roundtrip(tmp_path, net, synth_corpus):
+    from ci_ident.rl.infer import FORMAT, greedy_episode, load_model
+
+    p = tmp_path / "m.pt"
+    torch.save({"format": FORMAT, "state_dict": net.backbone.state_dict(), "model": {},
+                "env": {"io": [4, 2], "area_factor": 0.4}, "provenance": {}}, p)
+    net2, payload = load_model(p, synth_corpus)
+    env = CIEnv({"corpus": synth_corpus, "graphs": [7], **payload["env"]})
+    r1 = greedy_episode(net, CIEnv({"corpus": synth_corpus, "graphs": [7], **payload["env"]}))
+    r2 = greedy_episode(net2, env)
+    assert r1["cis"] == r2["cis"] and r1["speedup"] == r2["speedup"]
+    bad = net.backbone.state_dict()
+    bad.pop(next(iter(bad)))
+    torch.save({"format": FORMAT, "state_dict": bad, "model": {}, "env": {}}, p)
+    with pytest.raises(RuntimeError):
+        load_model(p, synth_corpus)

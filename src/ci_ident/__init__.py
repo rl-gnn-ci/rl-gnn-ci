@@ -1,3 +1,4 @@
-"""RL-GNN-CI: custom-instruction identification on data-dependence graphs (TACO formulation)."""
+"""RL-GNN-CI: reinforcement learning on data-dependence graphs for
+custom-instruction identification in extensible processors."""
 
-__version__ = "1.1.0"
+__version__ = "2.0.0"

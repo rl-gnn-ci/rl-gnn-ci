@@ -80,6 +80,57 @@ class Corpus:
     def sizes(self) -> np.ndarray:
         return np.asarray([e.num_nodes for e in self.entries], dtype=np.int64)
 
+    # ------------------------------------------------------------------
+    def sampler(self, *, size_min: int = 1, size_max: int = 10**9, exponent: float = 1.0,
+                mode: str = "per_size") -> "SizeSampler":
+        return SizeSampler(self, size_min=size_min, size_max=size_max,
+                           exponent=exponent, mode=mode)
+
+
+class SizeSampler:
+    """Draws training graphs log-uniformly in their node count.
+
+    ``mode="per_size"``: draw a node count ``n`` from the distinct sizes in
+    ``[size_min, size_max]`` with probability proportional to ``n**-exponent``,
+    then a graph uniformly among the graphs of that size.  On a corpus with the
+    same number of graphs at every size (the synthetic grid) this is the
+    log-uniform size distribution.
+
+    ``mode="per_graph"``: draw a graph with probability proportional to
+    ``num_nodes**-exponent`` (sizes weighted by how often they occur).
+    """
+
+    def __init__(self, corpus: Corpus, *, size_min: int, size_max: int,
+                 exponent: float, mode: str):
+        if mode not in ("per_size", "per_graph"):
+            raise ValueError(f"unknown sampling mode {mode!r}")
+        if not 0.0 <= float(exponent) <= 4.0:
+            raise ValueError("exponent must be in [0, 4]")
+        sizes = corpus.sizes
+        cand = np.flatnonzero((sizes >= size_min) & (sizes <= size_max))
+        if cand.size == 0:
+            raise ValueError(f"no graph in corpus {corpus.name!r} with size in "
+                             f"[{size_min}, {size_max}]")
+        self.mode = mode
+        self.exponent = float(exponent)
+        if mode == "per_size":
+            uniq = np.unique(sizes[cand])
+            w = uniq.astype(np.float64) ** (-self.exponent)
+            self._sizes = uniq
+            self._p = w / w.sum()
+            self._groups = {int(n): cand[sizes[cand] == n] for n in uniq}
+        else:
+            w = sizes[cand].astype(np.float64) ** (-self.exponent)
+            self._cand = cand
+            self._p = w / w.sum()
+
+    def __call__(self, rng: np.random.Generator) -> int:
+        if self.mode == "per_size":
+            n = int(rng.choice(self._sizes, p=self._p))
+            grp = self._groups[n]
+            return int(grp[int(rng.integers(0, grp.size))])
+        return int(self._cand[int(rng.choice(self._cand.size, p=self._p))])
+
 
 @lru_cache(maxsize=16)
 def load_corpus(manifest: str) -> Corpus:

@@ -1,0 +1,52 @@
+# Reference PPO configuration (every key and its default; see
+# src/ci_ident/rl/train.py).  Only `corpus` is required.
+seed: 0
+iterations: 3000
+checkpoint_every: 25
+corpus: data/synth/manifest.json      # built by `ci-ident-synth data/synth`
+
+env:                                  # training cell
+  io: [4, 2]                          # (max_in, max_out)
+  area_factor: 0.4                    # budget = area_factor * A_ref
+  radius: 1                           # 1 = connected CIs
+  max_nodes: 2000                     # action space |V|max + 1 (STOP)
+  reward:
+    commit_coef: 5.0                  # 5 * [log S(t+1) - log S(t)] at every commit
+    shape_coef: 5.0                   # (5/|V|) * [Phi(C') - Phi(C)] while growing
+    area_price: 0.0                   # lambda in Phi = saving - lambda * A(C)/A_budget
+
+sampler:                              # graph sizes log-uniform in [10, 2000]
+  size_min: 10
+  size_max: 2000
+  exponent: 1.0
+  mode: per_size
+
+model: {}                             # GIN, 4 layers, width 96 (ModelConfig defaults)
+max_nodes_per_chunk: 200000           # graph nodes per GNN forward chunk
+
+ppo:
+  lr: 1.0e-4
+  lambda_: 1.0
+  clip_param: 0.3
+  vf_clip_param: 20.0
+  vf_loss_coeff: 1.0
+  use_kl_loss: true
+  kl_coeff: 0.2                       # initial value; RLlib adapts it towards kl_target
+  kl_target: 0.015
+  grad_clip: 1.0
+  train_batch_size: 4096
+  sgd_minibatch_size: 512
+  num_sgd_iter: 2
+
+entropy:                              # start * (end/start)^(it/decay_iters), then end
+  start: 0.01
+  end: 0.0005
+  decay_iters: 244
+
+rollout:
+  num_env_runners: 16
+  rollout_fragment_length: 8
+  batch_mode: truncate_episodes
+
+resources:
+  num_gpus: 0

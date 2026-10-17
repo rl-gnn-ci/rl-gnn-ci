@@ -1,8 +1,8 @@
 cff-version: 1.2.0
 message: "If you use this work, please cite the paper listed under preferred-citation below."
 type: software
-title: "RL-GNN-CI: Reinforcement Learning on Data-Dependence Graphs for Custom-Instruction Identification (TACO formulation)"
-version: "1.1.0"
+title: "RL-GNN-CI: Reinforcement Learning on Data-Dependence Graphs for Custom-Instruction Identification"
+version: "2.0.0"
 date-released: "2026-10-17"
 license: MIT
 repository-code: "https://github.com/rl-gnn-ci/rl-gnn-ci"
@@ -20,7 +20,7 @@ authors:
     orcid: "https://orcid.org/0000-0003-3502-0872"
 
 preferred-citation:
-  type: article
+  type: conference-paper
   authors:
     - family-names: Hussein
       given-names: Eslam
@@ -28,14 +28,29 @@ preferred-citation:
       given-names: Bernd
     - family-names: Mayr
       given-names: Christian
-  title: "Reinforcement Learning on Data-Dependence Graphs for Custom Instruction Identification"
-  journal: "ACM Transactions on Architecture and Code Optimization"
-  publisher:
-    name: "Association for Computing Machinery"
+  title: "Reinforcement-Learned Custom-Instruction Identification in the Disjoint Design Space"
+  conference:
+    name: "Nordic Circuits and Systems Conference (NorCAS)"
   year: 2026
-  volume: 23
-  issue: 3
-  start: 1
-  end: 25
-  month: 7
-  doi: "10.1145/3828552"
+  status: in-press
+
+references:
+  - type: article
+    authors:
+      - family-names: Hussein
+        given-names: Eslam
+      - family-names: Waschneck
+        given-names: Bernd
+      - family-names: Mayr
+        given-names: Christian
+    title: "Reinforcement Learning on Data-Dependence Graphs for Custom Instruction Identification"
+    journal: "ACM Transactions on Architecture and Code Optimization"
+    publisher:
+      name: "Association for Computing Machinery"
+    year: 2026
+    volume: 23
+    issue: 3
+    start: 1
+    end: 25
+    month: 7
+    doi: "10.1145/3828552"

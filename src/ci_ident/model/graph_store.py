@@ -19,7 +19,6 @@ from typing import Optional, Sequence
 import dgl
 import torch
 
-from ci_ident.costs import op_index
 from ci_ident.data.corpus import Corpus, load_corpus
 from ci_ident.ddg.graph import edge_index, load_ddg, node_order, node_order_digest, static_node_features
 
@@ -27,8 +26,7 @@ from ci_ident.ddg.graph import edge_index, load_ddg, node_order, node_order_dige
 def build_dgl_graph(dot_path, *, expected_digest: Optional[str] = None,
                     expected_nodes: Optional[int] = None) -> dgl.DGLGraph:
     """DGL graph of one DDG in canonical node order, with ``ndata['feat']`` =
-    ``[hw_latency, area]`` (``[0, 0]`` for inadmissible nodes) and
-    ``ndata['op']`` = the opcode index (:func:`ci_ident.costs.op_index`)."""
+    ``[hw_latency, area]`` (``[0, 0]`` for inadmissible nodes)."""
     g = load_ddg(dot_path)
     order = node_order(g)
     if expected_nodes is not None and len(order) != int(expected_nodes):
@@ -39,7 +37,6 @@ def build_dgl_graph(dot_path, *, expected_digest: Optional[str] = None,
     dg = dgl.graph((torch.tensor(src, dtype=torch.int64), torch.tensor(dst, dtype=torch.int64)),
                    num_nodes=len(order), idtype=torch.int64)
     dg.ndata["feat"] = torch.tensor(static_node_features(g), dtype=torch.float32).reshape(-1, 2)
-    dg.ndata["op"] = torch.tensor([op_index(g.nodes[n]["op"]) for n in order], dtype=torch.int64)
     return dg
 
 

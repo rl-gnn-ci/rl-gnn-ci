@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ci-ident"
-version = "1.1.0"
-description = "RL-GNN-CI: reinforcement learning on data-dependence graphs for custom-instruction identification (TACO formulation)"
+version = "2.0.0"
+description = "RL-GNN-CI: reinforcement learning on data-dependence graphs for custom-instruction identification (v2 formulation, PPO)"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.10,<3.12"
@@ -30,7 +30,7 @@ dependencies = [
     "networkx>=3.2,<3.3",
     "pydot>=3.0,<4",          # networkx 3.2's read_dot requires pydot 3
     "PyYAML>=6.0",
-    "gymnasium==0.28.1",
+    "gymnasium==0.28.1",      # the Gymnasium version of Ray RLlib 2.34
     "torch==2.2.1",           # torch version of the dgl 2.1.0 graphbolt build
     "dgl>=2.1,<2.2",
     "torchdata==0.7.1",       # imported by dgl 2.1 (graphbolt)
@@ -39,8 +39,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+train = ["ray[rllib]==2.34.0", "pyarrow>=14,<18"]
 ilp = ["pyscipopt>=5"]
-sarsa = ["pybind11>=2.11"]
 test = ["pytest>=8"]
 
 [project.urls]
@@ -51,6 +51,7 @@ Paper = "https://doi.org/10.1145/3828552"
 ci-ident-synth         = "ci_ident.data.synth:main"
 ci-ident-manifest      = "ci_ident.data.build:main"
 ci-ident-stats         = "ci_ident.data.stats:main"
+ci-ident-train         = "ci_ident.rl.train:main"
 ci-ident-eval          = "ci_ident.rl.infer:main"
 ci-ident-bench         = "ci_ident.bench.grid:main"
 ci-ident-bench-summary = "ci_ident.bench.grid:summary_main"
@@ -61,11 +62,9 @@ package-dir = { "" = "src" }
 [tool.setuptools.packages.find]
 where = ["src"]
 
-[tool.setuptools.package-data]
-"ci_ident.variants" = ["*.yaml"]
-"ci_ident.baselines.sarsa" = ["csrc/*.cpp"]
-
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["tests"]
+addopts = "-m 'not slow'"
+markers = ["slow: end-to-end training smoke test (needs ray[rllib]); run with -m slow"]
 filterwarnings = ["ignore::DeprecationWarning", "ignore::UserWarning"]
