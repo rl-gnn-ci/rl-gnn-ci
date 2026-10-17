@@ -1,0 +1,14 @@
+# The evaluation grid of the TACO paper: 8 benchmark DDGs x 6 port bounds x 5 area
+# factors = 240 scenarios.  Paths are relative to this file.
+corpus: manifest.json
+benchmarks:
+  Rijndael-AES:    dot/mibench/aes.dot
+  Blowfish:        dot/mibench/blowfish.dot
+  MD5:             dot/mibench/md5.dot
+  SHA:             dot/mibench/sha.dot
+  Susan:           dot/mibench/susan.dot
+  HadamardSAD8x8:  dot/jm_lencod/hadamardsad8x8.dot
+  computeSATD:     dot/jm_lencod/computesatd.dot
+  MPEG2_Transform: dot/mediabench/mpeg2_transform.dot
+io_pairs: [[2, 1], [4, 2], [6, 3], [8, 4], [10, 5], [12, 6]]
+area_factors: [0.2, 0.4, 0.6, 0.8, 1.0]

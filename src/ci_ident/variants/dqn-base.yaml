@@ -1,0 +1,11 @@
+# DQN (Base): strict masking, eta modulator, potential shaping, size term, G = rho.
+# Encoder: the paper's GNN-configuration table.  Reward weights: defaults.
+env:
+  variant: base
+  gamma: 0.99
+model:
+  algo: dqn
+  conv: gin
+  num_layers: 4
+  hidden: 128
+  pooling: attention

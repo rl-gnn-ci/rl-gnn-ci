@@ -1,0 +1,11 @@
+# PPO-AbsGain: strict masking, eta modulator, shaping and size term with G = Delta.
+# Encoder: the paper's GNN-configuration table.  gamma = 0.995.  Reward weights: defaults.
+env:
+  variant: absgain
+  gamma: 0.995
+model:
+  algo: ppo
+  conv: gin
+  num_layers: 2
+  hidden: 160
+  pooling: sum

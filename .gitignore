@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+/build/
+/dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+
+# compiled extensions (built locally)
+*.so
+*.so.tmp
+*.pyd
+
+# local outputs (repository root only)
+/data/
+/runs/
+/results/
+*.pt

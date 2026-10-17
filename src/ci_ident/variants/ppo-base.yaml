@@ -1,0 +1,12 @@
+# PPO (Base): strict masking, eta modulator, potential shaping, size term, G = rho.
+# Encoder: the paper's GNN-configuration table.  gamma = 0.995.  Reward weights: defaults.
+env:
+  variant: base
+  gamma: 0.995
+model:
+  algo: ppo
+  conv: gatv2
+  heads: 4
+  num_layers: 2
+  hidden: 96
+  pooling: attention

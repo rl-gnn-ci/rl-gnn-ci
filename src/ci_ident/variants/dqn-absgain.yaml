@@ -1,0 +1,24 @@
+# DQN-AbsGain: strict masking, eta modulator, shaping and size term with G = Delta.
+# Encoder: the paper's GNN-configuration table.  gamma, reward weights and NoisyNet:
+# the training configuration of the DQN-AbsGain model (seed 0).
+env:
+  variant: absgain
+  gamma: 0.95
+  weights:
+    w_perf: 8.0
+    w_size: 0.9885158205868119
+    w_ext: 0.5752033005536602
+    w_shp: 0.3106300876245627
+    lambda_io: 0.0598452523921326
+    lambda_conv: 0.09070486843611825
+    w_invalid: -0.2
+    w_bad_stop: -0.5
+    w_empty_stop: -1.0
+model:
+  algo: dqn
+  conv: gatv2
+  heads: 2
+  num_layers: 3
+  hidden: 128
+  pooling: attention
+  noisy: true

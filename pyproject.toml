@@ -1,0 +1,71 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ci-ident"
+version = "1.1.0"
+description = "RL-GNN-CI: reinforcement learning on data-dependence graphs for custom-instruction identification (TACO formulation)"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10,<3.12"
+authors = [
+    { name = "Eslam Hussein" },
+    { name = "Bernd Waschneck" },
+    { name = "Christian Mayr" },
+]
+keywords = ["ASIP", "RISC-V", "custom instructions", "instruction-set extension",
+            "reinforcement learning", "graph neural networks"]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+# Tested set: Python 3.11, torch 2.2.1 (CPU), dgl 2.1.0, numpy 1.26.4,
+# networkx 3.2.1, pydot 3.0.1; see requirements-lock.txt.
+dependencies = [
+    "numpy>=1.26,<2",
+    "networkx>=3.2,<3.3",
+    "pydot>=3.0,<4",          # networkx 3.2's read_dot requires pydot 3
+    "PyYAML>=6.0",
+    "gymnasium==0.28.1",
+    "torch==2.2.1",           # torch version of the dgl 2.1.0 graphbolt build
+    "dgl>=2.1,<2.2",
+    "torchdata==0.7.1",       # imported by dgl 2.1 (graphbolt)
+    "pydantic>=2",            # imported by dgl 2.1 (graphbolt)
+    "pandas>=2,<3",           # imported by dgl 2.1 (graphbolt)
+]
+
+[project.optional-dependencies]
+ilp = ["pyscipopt>=5"]
+sarsa = ["pybind11>=2.11"]
+test = ["pytest>=8"]
+
+[project.urls]
+Source = "https://github.com/rl-gnn-ci/rl-gnn-ci"
+Paper = "https://doi.org/10.1145/3828552"
+
+[project.scripts]
+ci-ident-synth         = "ci_ident.data.synth:main"
+ci-ident-manifest      = "ci_ident.data.build:main"
+ci-ident-stats         = "ci_ident.data.stats:main"
+ci-ident-eval          = "ci_ident.rl.infer:main"
+ci-ident-bench         = "ci_ident.bench.grid:main"
+ci-ident-bench-summary = "ci_ident.bench.grid:summary_main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"ci_ident.variants" = ["*.yaml"]
+"ci_ident.baselines.sarsa" = ["csrc/*.cpp"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["tests"]
+filterwarnings = ["ignore::DeprecationWarning", "ignore::UserWarning"]

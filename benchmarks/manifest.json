@@ -1,0 +1,54 @@
+{
+ "name": "benchmarks",
+ "root": ".",
+ "graphs": [
+  {
+   "path": "dot/mibench/aes.dot",
+   "num_nodes": 844,
+   "num_edges": 799,
+   "node_order": "bdb0e5edb42a92f2"
+  },
+  {
+   "path": "dot/mibench/blowfish.dot",
+   "num_nodes": 372,
+   "num_edges": 402,
+   "node_order": "6df52a48810c2955"
+  },
+  {
+   "path": "dot/mibench/md5.dot",
+   "num_nodes": 666,
+   "num_edges": 1060,
+   "node_order": "146d646256208cf7"
+  },
+  {
+   "path": "dot/mibench/sha.dot",
+   "num_nodes": 1215,
+   "num_edges": 1753,
+   "node_order": "8d34ef7e3cc5b589"
+  },
+  {
+   "path": "dot/mibench/susan.dot",
+   "num_nodes": 303,
+   "num_edges": 303,
+   "node_order": "71eb8f4e7bd7398f"
+  },
+  {
+   "path": "dot/jm_lencod/hadamardsad8x8.dot",
+   "num_nodes": 384,
+   "num_edges": 575,
+   "node_order": "6d8eec1d82ab1fb1"
+  },
+  {
+   "path": "dot/jm_lencod/computesatd.dot",
+   "num_nodes": 355,
+   "num_edges": 428,
+   "node_order": "ada54af915775837"
+  },
+  {
+   "path": "dot/mediabench/mpeg2_transform.dot",
+   "num_nodes": 731,
+   "num_edges": 809,
+   "node_order": "d0b7c75ffea1029c"
+  }
+ ]
+}
